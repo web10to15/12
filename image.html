@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <title>Image Code Scanner - QR, Barcode & Auto Detection</title>
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    /* CSS Reset and base */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    html {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+      background: linear-gradient(135deg, #20232a 0%, #61dafb 100%);
+      color: #e1e1e1;
+      height: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body, #app {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    /* Glassmorphism Variables */
+    :root {
+      --glass-bg: rgba(32, 35, 42, 0.75);
+      --glass-shadow: rgba(0, 0, 0, 0.25);
+      --accent-gradient: linear-gradient(135deg, #61dafb 0%, #21a1f1 100%);
+      --primary-color: #61dafb;
+      --text-main: #e1e1e1;
+      --text-secondary: #9aa7b0;
+      --danger-color: #ef5350;
+      --success-color: #66bb6a;
+      --warning-color: #ffa726;
+      --gray-dark: #1c2028;
+      --gray-light: #2e333e;
+      --border-radius: 12px;
+      --transition-speed: 0.3s;
+      --header-height: 64px;
+      --sidebar-width: 280px;
+    }
+    /* Scrollbar (custom, subtle) */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #21a1f1;
+    }
+
+    /* Header */
+    header.app-header {
+      position: sticky;
+      top: 0;
+      height: var(--header-height);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px) saturate(140%);
+      box-shadow:
+        0 8px 32px 0 var(--glass-shadow);
+      z-index: 1000;
+    }
+    header .logo {
+      font-weight: 700;
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header .logo .material-icons {
+      font-size: 32px;
+    }
+    nav.nav-main {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    nav.nav-main button, nav.nav-main .theme-toggle {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-main);
+      font-size: 20px;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background var(--transition-speed);
+    }
+    nav.nav-main button:hover,
+    nav.nav-main .theme-toggle:hover {
+      background: var(--gray-light);
+    }
+    /* Sidebar */
+    aside.app-sidebar {
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      width: var(--sidebar-width);
+      height: calc(100vh - var(--header-height));
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px) saturate(140%);
+      box-shadow: 4px 0 32px 0 var(--glass-shadow);
+      padding: 24px 16px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: transform var(--transition-speed);
+      z-index: 999;
+    }
+    aside.app-sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+    aside.app-sidebar nav {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-grow: 1;
+    }
+    aside.app-sidebar nav button {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 18px;
+      padding: 12px 16px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background var(--transition-speed), color var(--transition-speed);
+      width: 100%;
+      text-align: left;
+    }
+    aside.app-sidebar nav button:hover,
+    aside.app-sidebar nav button.active {
+      background: var(--primary-color);
+      color: #101820;
+      box-shadow: 0 8px 24px rgb(97 218 251 / 0.6);
+      outline: none;
+    }
+    aside.app-sidebar nav button .material-icons {
+      font-size: 24px;
+    }
+    aside.app-sidebar .sidebar-footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: center;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255 255 255 / 0.1);
+    }
+    aside.app-sidebar .sidebar-footer a {
+      color: var(--text-secondary);
+      margin: 0 8px;
+      font-size: 24px;
+      transition: color var(--transition-speed);
+    }
+    aside.app-sidebar .sidebar-footer a:hover {
+      color: var(--primary-color);
+    }
+    /* Main content */
+    main.app-main {
+      margin-left: var(--sidebar-width);
+      margin-top: var(--header-height);
+      padding: 24px;
+      min-height: calc(100vh - var(--header-height));
+      background: linear-gradient(135deg, #20232a 0%, #121417 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      transition: margin-left var(--transition-speed);
+    }
+    main.app-main.collapsed {
+      margin-left: 0;
+    }
+
+    /* Responsive adjustments for sidebar toggle */
+    @media (max-width: 1023px) {
+      aside.app-sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 1100;
+      }
+      aside.app-sidebar.open {
+        transform: translateX(0);
+      }
+      main.app-main {
+        margin-left: 0;
+      }
+      main.app-main.sidebar-open {
+        position: fixed;
+        width: 100vw;
+        overflow: hidden;
+      }
+    }
+
+    /* Scanner area */
+    .scanner-container {
+      background: var(--glass-bg);
+      padding: 24px;
+      border-radius: var(--border-radius);
+      box-shadow: 0 8px 32px rgb(32 35 42 / 0.6);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .scanner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .scanner-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .scanner-header h1 .material-icons {
+      font-size: 32px;
+    }
+    .file-upload-button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: var(--border-radius);
+      border: none;
+      cursor: pointer;
+      background: var(--primary-color);
+      color: #101820;
+      box-shadow: 0 8px 16px rgb(97 218 251 / 0.5);
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .file-upload-button:hover {
+      background: #21a1f1;
+      box-shadow: 0 12px 26px rgb(33 161 241 / 0.7);
+    }
+    .file-upload-button input {
+      display: none;
+    }
+
+    .preview-container {
+      position: relative;
+      border-radius: var(--border-radius);
+      background: var(--gray-dark);
+      border: 1px solid rgba(255 255 255 / 0.1);
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .preview-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .preview-placeholder {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      user-select: none;
+    }
+
+    /* Results panel */
+    .results-panel {
+      background: var(--glass-bg);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: 0 6px 24px rgb(32 35 42 / 0.5);
+      max-height: 240px;
+      overflow-y: auto;
+      color: var(--text-main);
+      font-family: monospace;
+      font-size: 1.1rem;
+      user-select: text;
+    }
+    .results-panel h2 {
+      margin: 0 0 12px 0;
+      color: var(--primary-color);
+      font-weight: 700;
+      font-size: 1.3rem;
+    }
+    .results-panel .result-item {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(97, 218, 251, 0.12);
+      margin-bottom: 8px;
+      transition: background var(--transition-speed);
+      cursor: default;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .results-panel .result-item:last-child {
+      margin-bottom: 0;
+    }
+    .result-type {
+      font-weight: 600;
+      color: #83c8ff;
+      flex-shrink: 0;
+      min-width: 90px;
+    }
+    .result-value {
+      flex-grow: 1;
+      word-break: break-word;
+    }
+    .copy-btn {
+      font-size: 20px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--primary-color);
+      transition: color var(--transition-speed);
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 6px;
+      border-radius: 6px;
+      user-select: none;
+    }
+    .copy-btn:hover {
+      color: #21a1f1;
+      background: rgba(33, 161, 241, 0.15);
+    }
+    /* Toast notification system */
+    .toast-container {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 11000;
+      max-width: 320px;
+    }
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      box-shadow: 0 4px 20px rgb(32 35 42 / 0.7);
+      border-radius: var(--border-radius);
+      padding: 12px 16px;
+      font-weight: 600;
+      user-select: none;
+      animation: slide-in 0.5s ease forwards;
+    }
+    .toast .material-icons {
+      min-width: 24px;
+    }
+    .toast.success {
+      border-left: 4px solid var(--success-color);
+    }
+    .toast.error {
+      border-left: 4px solid var(--danger-color);
+    }
+    .toast.warning {
+      border-left: 4px solid var(--warning-color);
+    }
+    @keyframes slide-in {
+      0% {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Accessibility focus outlines */
+    button:focus,
+    input:focus,
+    .copy-btn:focus {
+      outline: 3px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    /* Responsive typography and layout */
+    @media (max-width: 1024px) {
+      main.app-main {
+        margin-left: 0;
+        padding: 16px;
+      }
+      aside.app-sidebar.open {
+        width: 80vw;
+      }
+      .scanner-container {
+        max-width: 100%;
+      }
+    }
+    @media (max-width: 640px) {
+      header.app-header {
+        padding: 0 16px;
+      }
+      nav.nav-main {
+        gap: 12px;
+      }
+      .file-upload-button {
+        width: 100%;
+        justify-content: center;
+      }
+      .preview-container {
+        height: 240px;
+      }
+      .results-panel {
+        font-size: 1rem;
+        max-height: 200px;
+      }
+    }
+    
+    
+    
+    
+    #create-btn {
+      background: #38a169;
+      color: white;
+    }
+    
+    #create-btn:hover {
+      background: #2f855a;
+    }
+    
+    #image-scan-btn {
+      background: #9f7aea;
+      color: white;
+    }
+    
+    #image-scan-btn:hover {
+      background: #805ad5;
+    }
+    
+    .button-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 25px;
+    }
+    
+    button {
+      flex: 1 1 45%;
+      min-width: 140px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    
+  </style>
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- HEADER -->
+    <header class="app-header" role="banner">
+      <div class="logo" aria-label="Application Logo" tabindex="0">
+        <span class="material-icons" aria-hidden="true">qr_code_scanner</span> Image Scanner
+      </div>
+      <nav class="nav-main" aria-label="Primary Navigation">
+        <button id="sidebarToggle" aria-label="Toggle Sidebar" aria-pressed="false" title="Toggle Menu" class="material-icons">menu</button>
+        <button id="themeToggle" aria-label="Toggle Dark/Light Theme" title="Toggle Theme" class="theme-toggle material-icons">dark_mode</button>
+      </nav>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar" role="navigation" aria-label="Sidebar Navigation" id="sidebar">
+      <nav>
+        <button class="active" data-section="scanner" aria-current="page">
+          <span class="material-icons" aria-hidden="true">photo_camera</span> Scanner
+        </button>
+        <button data-section="history">
+          <span class="material-icons" aria-hidden="true">history</span> History
+        </button>
+        <button data-section="settings">
+          <span class="material-icons" aria-hidden="true">settings</span> Settings
+        </button>
+      </nav>
+      <div class="sidebar-footer" role="contentinfo">
+        <a href="#" target="_blank" rel="noopener" aria-label="GitHub">
+          <span class="material-icons" aria-hidden="true">code</span>
+        </a>
+        <a href="#" target="_blank" rel="noopener" aria-label="Twitter">
+          <span class="material-icons" aria-hidden="true">twitter</span>
+        </a>
+        <a href="#" aria-label="Send Email Support">
+          <span class="material-icons" aria-hidden="true">email</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="app-main" id="maincontent" tabindex="-1">
+      <!-- SCANNER SECTION -->
+      <section id="scanner-section" class="scanner-container" aria-label="Image Scanner Section" role="main">
+        <div class="scanner-header">
+          <h1>
+            <span class="material-icons" aria-hidden="true">qr_code_2</span>
+            Upload Image to Scan
+          </h1>
+          <label for="fileInput" class="file-upload-button" role="button" tabindex="0">
+            <span class="material-icons" aria-hidden="true">upload_file</span> Select Image
+            <input type="file" id="fileInput" accept="image/*" aria-describedby="fileInputDesc" />
+          </label>
+        </div>
+        <p id="fileInputDesc" class="visually-hidden">Upload or select image file containing QR code, barcode or other codes to scan.</p>
+        <div class="preview-container" aria-live="polite" aria-atomic="true">
+          <p class="preview-placeholder">No image selected yet. Supported codes: QR, Barcode, DataMatrix, Aztec, PDF417.</p>
+          <img id="previewImage" alt="Uploaded Image Preview" hidden / src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/859101ba-ca05-4814-b1f1-4a9c1983e7d6.png">
+        </div>
+        <div class="results-panel" aria-label="Scan Results" hidden>
+          <h2>Scan Results</h2>
+          <div id="resultsList" role="list" aria-live="polite" aria-atomic="true"></div>
+        </div>
+      </section>
+
+      <!-- HISTORY SECTION -->
+      <section id="history-section" class="scanner-container" aria-label="Scan History" hidden>
+        <h1><span class="material-icons" aria-hidden="true">history</span> Scan History</h1>
+        <div id="historyList" class="results-panel" role="list" tabindex="0" aria-live="polite"></div>
+      </section>
+
+      <!-- SETTINGS SECTION -->
+      <section id="settings-section" class="scanner-container" aria-label="Application Settings" hidden>
+        <h1><span class="material-icons" aria-hidden="true">settings</span> Settings</h1>
+        <form id="settingsForm" novalidate>
+          <fieldset>
+              
+              <button id="create-btn" onclick="window.location.href='12.html'">Create QR Code</button>
+      <button id="image-scan-btn" onclick="window.location.href='index.html'">QR scanner</button>
+              
+              
+            <legend>Theme</legend>
+            <label>
+              <input type="radio" name="theme" value="light" /> Light
+            </label>
+            <label>
+              <input type="radio" name="theme" value="dark" checked /> Dark
+            </label>
+            <label>
+              <input type="radio" name="theme" value="system" /> System Default
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>Notifications</legend>
+            <label>
+              <input type="checkbox" id="enableNotifications" checked />
+              Enable Toast Notifications
+            </label>
+          </fieldset>
+          <button type="submit" class="file-upload-button" style="margin-top: 16px;">
+            <span class="material-icons">save</span> Save Settings
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  </div>
+
+  <script>
+    // Strict mode
+    'use strict';
+
+    // Globals and Elements
+    const app = document.getElementById('app');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const mainContent = document.getElementById('maincontent');
+    const fileInput = document.getElementById('fileInput');
+    const previewImage = document.getElementById('previewImage');
+    const previewContainer = previewImage.parentElement;
+    const resultsPanel = document.querySelector('.results-panel');
+    const resultsList = document.getElementById('resultsList');
+    const toastContainer = document.getElementById('toastContainer');
+
+    // Sections
+    const scannerSection = document.getElementById('scanner-section');
+    const historySection = document.getElementById('history-section');
+    const settingsSection = document.getElementById('settings-section');
+
+    // Sidebar buttons
+    const sidebarNavButtons = sidebar.querySelectorAll('nav button');
+
+    // History data stored in localStorage key
+    const STORAGE_HISTORY_KEY = 'imageScannerHistory';
+    // Settings saved in localStorage key
+    const STORAGE_SETTINGS_KEY = 'imageScannerSettings';
+
+    // Toast timeout
+    const TOAST_TIMEOUT = 4000;
+
+    // Scan History in-memory
+    let scanHistory = [];
+
+    // Settings
+    let settings = {
+      theme: 'dark',
+      notificationsEnabled: true
+    };
+
+    // ZXing Browser Barcode Reader (using CDN)
+    // We'll import ZXing from https://cdn.jsdelivr.net/npm/@zxing/browser@0.0.12/+esm
+    // but since we need a single file, we import via script tag then use global ZXing
+    // Let's embed it via script tag dynamically.
+
+    // Utility function: debounce
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // UTILITY: Toast Notifications
+    function showToast(message, type = 'success', icon = 'info') {
+      if (!settings.notificationsEnabled) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <span class="material-icons" aria-hidden="true">${icon}</span>
+        <span>${message}</span>
+      `;
+      toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+      }, TOAST_TIMEOUT - 600);
+      setTimeout(() => {
+        toast.remove();
+      }, TOAST_TIMEOUT);
+    }
+
+    // Save and Load History to localStorage
+    function saveHistory() {
+      localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(scanHistory));
+    }
+    function loadHistory() {
+      const stored = localStorage.getItem(STORAGE_HISTORY_KEY);
+      if (stored) {
+        try {
+          scanHistory = JSON.parse(stored) || [];
+        } catch {
+          scanHistory = [];
+        }
+      }
+    }
+
+    // Render Scan History List
+    function renderHistory() {
+      historySection.hidden = false;
+      scannerSection.hidden = true;
+      settingsSection.hidden = true;
+
+      if (scanHistory.length === 0) {
+        historySection.querySelector('#historyList').innerHTML = `<p style="color: var(--text-secondary); user-select:none;">No scan history available.</p>`;
+        return;
+      }
+      const listEl = document.getElementById('historyList');
+      listEl.innerHTML = '';
+      for (let item of scanHistory.slice().reverse()) {
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.tabIndex = 0;
+        div.setAttribute('role', 'listitem');
+        div.title = `Scanned on ${new Date(item.timestamp).toLocaleString()}`;
+        div.innerHTML = `
+          <span class="result-type">${item.type}</span>
+          <span class="result-value">${escapeHtml(item.value)}</span>
+          <button class="copy-btn" aria-label="Copy result" title="Copy result" tabindex="0">
+            <span class="material-icons">content_copy</span>
+          </button>
+        `;
+        div.querySelector('.copy-btn').addEventListener('click', () => {
+          copyToClipboard(item.value);
+        });
+        listEl.appendChild(div);
+      }
+    }
+
+    // Escape HTML utility for safety
+    function escapeHtml(string) {
+      const div = document.createElement('div');
+      div.textContent = string;
+      return div.innerHTML;
+    }
+
+    // Copy to Clipboard
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copied to clipboard!', 'success', 'check_circle');
+      } catch (e) {
+        showToast('Failed to copy.', 'error', 'error');
+      }
+    }
+
+    // Show Scan Results
+    function showScanResults(results) {
+      if (!results || results.length === 0) {
+        resultsPanel.hidden = true;
+        return;
+      }
+      resultsPanel.hidden = false;
+      resultsList.innerHTML = '';
+      for (let r of results) {
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.tabIndex = 0;
+        div.setAttribute('role', 'listitem');
+        div.innerHTML = `
+          <span class="result-type">${r.type}</span>
+          <span class="result-value">${escapeHtml(r.value)}</span>
+          <button class="copy-btn" aria-label="Copy result" title="Copy result" tabindex="0">
+            <span class="material-icons">content_copy</span>
+          </button>
+        `;
+        div.querySelector('.copy-btn').addEventListener('click', () => {
+          copyToClipboard(r.value);
+        });
+        resultsList.appendChild(div);
+      }
+    }
+
+    // Load Settings
+    function loadSettings() {
+      const stored = localStorage.getItem(STORAGE_SETTINGS_KEY);
+      if (stored) {
+        try {
+          const s = JSON.parse(stored);
+          if (s) {
+            settings = {...settings, ...s};
+          }
+        } catch {}
+      }
+      applyTheme(settings.theme);
+      // Reflect UI in settings form
+      const themeRadios = document.querySelectorAll('#settingsForm input[name="theme"]');
+      themeRadios.forEach(r => {
+        r.checked = r.value === settings.theme;
+      });
+      document.getElementById('enableNotifications').checked = settings.notificationsEnabled;
+      updateThemeToggleIcon();
+    }
+    // Save Settings
+    function saveSettings() {
+      localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    // Apply Theme
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.style.colorScheme = 'dark';
+        document.documentElement.classList.add('dark-theme');
+      } else if (theme === 'light') {
+        document.documentElement.style.colorScheme = 'light';
+        document.documentElement.classList.remove('dark-theme');
+      } else {
+        // system
+        document.documentElement.style.colorScheme = 'auto';
+        // check system preference
+        const mql = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mql.matches) {
+          document.documentElement.classList.add('dark-theme');
+        } else {
+          document.documentElement.classList.remove('dark-theme');
+        }
+      }
+    }
+
+    // Update Theme Toggle Icon
+    function updateThemeToggleIcon() {
+      themeToggleBtn.textContent =
+        settings.theme === 'dark' ? 'dark_mode' :
+        settings.theme === 'light' ? 'light_mode' : 'brightness_auto';
+    }
+
+    // Sidebar toggle handler for mobile
+    sidebarToggleBtn.addEventListener('click', () => {
+      if (window.innerWidth < 1024) {
+        if (sidebar.classList.contains('open')) {
+          sidebar.classList.remove('open');
+          mainContent.classList.remove('sidebar-open');
+          sidebarToggleBtn.setAttribute('aria-pressed', 'false');
+          sidebarToggleBtn.focus();
+        } else {
+          sidebar.classList.add('open');
+          mainContent.classList.add('sidebar-open');
+          sidebarToggleBtn.setAttribute('aria-pressed', 'true');
+        }
+      } else {
+        // On desktop, collapse sidebar
+        if (sidebar.classList.contains('collapsed')) {
+          sidebar.classList.remove('collapsed');
+          mainContent.classList.remove('collapsed');
+          sidebarToggleBtn.setAttribute('aria-pressed', 'false');
+          sidebarToggleBtn.focus();
+        } else {
+          sidebar.classList.add('collapsed');
+          mainContent.classList.add('collapsed');
+          sidebarToggleBtn.setAttribute('aria-pressed', 'true');
+        }
+      }
+    });
+
+    // Theme toggle handler
+    themeToggleBtn.addEventListener('click', () => {
+      if (settings.theme === 'dark') {
+        settings.theme = 'light';
+      } else if (settings.theme === 'light') {
+        settings.theme = 'system';
+      } else {
+        settings.theme = 'dark';
+      }
+      applyTheme(settings.theme);
+      saveSettings();
+      updateThemeToggleIcon();
+    });
+
+    // Sidebar navigation buttons click handler
+    sidebarNavButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        sidebarNavButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const selected = btn.dataset.section;
+        switchSection(selected);
+        // Close sidebar on mobile after selection
+        if (window.innerWidth < 1024) {
+          sidebar.classList.remove('open');
+          mainContent.classList.remove('sidebar-open');
+          sidebarToggleBtn.setAttribute('aria-pressed', 'false');
+          sidebarToggleBtn.focus();
+        }
+      });
+    });
+    // Switch visible section
+    function switchSection(section) {
+      scannerSection.hidden = section !== 'scanner';
+      historySection.hidden = section !== 'history';
+      settingsSection.hidden = section !== 'settings';
+
+      if (section === 'history') {
+        renderHistory();
+      } else if (section === 'settings') {
+        mainContent.querySelector('#settingsForm').focus();
+      } else {
+        mainContent.querySelector('#fileInput').focus();
+      }
+      // Focus main content for screen reader
+      mainContent.focus();
+    }
+
+    // Handle settings form submit
+    const settingsForm = document.getElementById('settingsForm');
+    settingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(settingsForm);
+      const themeValue = formData.get('theme');
+      settings.theme = themeValue || 'dark';
+      settings.notificationsEnabled = document.getElementById('enableNotifications').checked;
+      applyTheme(settings.theme);
+      saveSettings();
+      updateThemeToggleIcon();
+      showToast('Settings saved successfully.', 'success', 'check_circle');
+    });
+
+    // IMAGE SCANNING LOGIC
+    // We will use ZXing library for barcode detection:
+    //  - QRCode
+    //  - Code128, Code39, EAN, UPC, ITF, Codabar etc.
+    // As well as jsQR for QR specifically for fallback.
+    // Also BarcodeDetector API if available and fallback to libraries
+
+    // Load ZXing library (using CDN) synchronously by embedding script tag dynamically
+    const zxingScript = document.createElement('script');
+    zxingScript.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js';
+    zxingScript.crossOrigin = 'anonymous';
+    document.head.appendChild(zxingScript);
+
+    // Load jsQR library for fallback QR scanning
+    const jsqrScript = document.createElement('script');
+    jsqrScript.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    jsqrScript.crossOrigin = 'anonymous';
+    document.head.appendChild(jsqrScript);
+
+    // BarcodeDetector API support check
+    const supportsBarcodeDetector = 'BarcodeDetector' in window;
+
+    // Allowed formats for BarcodeDetector API
+    const supportedFormats = supportsBarcodeDetector
+      ? BarcodeDetector.getSupportedFormats()
+      : [];
+
+    // Current ZXing code reader instance
+    let codeReader = null;
+
+    // State: file image data URL
+    let currentImageDataUrl = null;
+
+    // Prepare canvas for ZXing or jsQR scanning
+    const offscreenCanvas = document.createElement('canvas');
+    const offscreenContext = offscreenCanvas.getContext('2d');
+
+    // Function to scan image data for codes
+    async function scanImage(image) {
+      // Resize Canvas to image size
+      offscreenCanvas.width = image.naturalWidth || image.width;
+      offscreenCanvas.height = image.naturalHeight || image.height;
+      offscreenContext.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+      offscreenContext.drawImage(image, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+      const imageData = offscreenContext.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+      const results = [];
+
+      // 1. Try BarcodeDetector API first, if supported
+      if (supportsBarcodeDetector) {
+        try {
+          const barcodeDetector = new BarcodeDetector({
+            formats: supportedFormats.length ? supportedFormats : ['qr_code', 'ean_13', 'code_128', 'data_matrix', 'aztec', 'pdf417'],
+          });
+          const detected = await barcodeDetector.detect(image);
+          if (detected && detected.length) {
+            for (const d of detected) {
+              results.push({
+                type: d.format.toUpperCase(),
+                value: d.rawValue
+              });
+            }
+            if (results.length) {
+              return results;
+            }
+          }
+        } catch (err) {
+          // ignore BarcodeDetector errors and fallback
+          console.warn('BarcodeDetector error:', err);
+        }
+      }
+
+      // 2. Try ZXing library for barcode detection
+      if (window.ZXing) {
+        if (!codeReader) {
+          codeReader = new ZXing.BrowserBarcodeReader();
+        }
+        try {
+          // ZXing requires HTMLVideoElement or HTMLImageElement, we give image
+          const result = await codeReader.decodeFromImageElement(image);
+          if (result) {
+            results.push({
+              type: result.getBarcodeFormat(),
+              value: result.getText()
+            });
+            return results;
+          }
+        } catch (e) {
+          // no result, fallback to QR code only parsing
+        }
+      }
+
+      // 3. Fallback to jsQR for QR code specifically
+      if (window.jsQR) {
+        const qrResult = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+        if (qrResult) {
+          results.push({
+            type: 'QR_CODE',
+            value: qrResult.data
+          });
+          return results;
+        }
+      }
+
+      // 4. No code detected
+      return [];
+    }
+
+    // Handle file input change
+    fileInput.addEventListener('change', async (ev) => {
+      const file = ev.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file.', 'error', 'error');
+        return;
+      }
+
+      // Load image and scan
+      const reader = new FileReader();
+      reader.onload = async () => {
+        currentImageDataUrl = reader.result;
+        previewImage.src = currentImageDataUrl;
+        previewImage.hidden = false;
+        previewContainer.querySelector('.preview-placeholder').hidden = true;
+
+        showToast('Processing image, scanning for codes...', 'success', 'search');
+
+        // Delay to show image preview before heavy processing
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        let scanResults = [];
+        try {
+          scanResults = await scanImage(previewImage);
+        } catch (err) {
+          showToast('Error scanning the image.', 'error', 'error');
+          console.error(err);
+          scanResults = [];
+        }
+
+        if (scanResults.length === 0) {
+          showToast('No codes detected in the image.', 'warning', 'warning');
+          resultsPanel.hidden = true;
+        } else {
+          showScanResults(scanResults);
+          // Add to history with timestamp
+          const timestamp = Date.now();
+          for (let r of scanResults) {
+            scanHistory.push({
+              type: r.type,
+              value: r.value,
+              timestamp
+            });
+          }
+          saveHistory();
+          showToast('Scan successful!', 'success', 'check_circle');
+        }
+      };
+      reader.readAsDataURL(file);
+      // Reset input for same file upload detection
+      fileInput.value = '';
+    });
+
+    // Keyboard accessibility for file upload button label
+    document.querySelector('.file-upload-button').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    // Accessibility: Trap focus inside sidebar when open on mobile
+    let lastFocusedElementBeforeSidebar = null;
+    function trapFocusInSidebar() {
+      if (!sidebar.classList.contains('open')) {
+        if (lastFocusedElementBeforeSidebar) lastFocusedElementBeforeSidebar.focus();
+        return;
+      }
+      lastFocusedElementBeforeSidebar = document.activeElement;
+      const focusableElements = sidebar.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const firstEl = focusableElements[0];
+      const lastEl = focusableElements[focusableElements.length - 1];
+      sidebar.addEventListener('keydown', function trap(e) {
+        if (e.key === 'Tab') {
+          if (e.shiftKey) {
+            if (document.activeElement === firstEl) {
+              e.preventDefault();
+              lastEl.focus();
+            }
+          } else {
+            if (document.activeElement === lastEl) {
+              e.preventDefault();
+              firstEl.focus();
+            }
+          }
+        }
+      }, {once: true});
+    }
+
+    // On sidebar open/off toggle
+    new MutationObserver(() => {
+      if (sidebar.classList.contains('open')) {
+        trapFocusInSidebar();
+      }
+    }).observe(sidebar, {attributes: true});
+
+    // Initialization
+    function initialize() {
+      loadSettings();
+      loadHistory();
+      switchSection('scanner');
+      updateThemeToggleIcon();
+
+      // Close sidebar on outside click (mobile)
+      document.addEventListener('click', (ev) => {
+        if (window.innerWidth >= 1024) return;
+        if (!sidebar.classList.contains('open')) return;
+        if (!sidebar.contains(ev.target) && !sidebarToggleBtn.contains(ev.target)) {
+          sidebar.classList.remove('open');
+          mainContent.classList.remove('sidebar-open');
+          sidebarToggleBtn.setAttribute('aria-pressed', 'false');
+          sidebarToggleBtn.focus();
+        }
+      });
+    }
+
+    // Run after external libs load
+    function waitForLibrariesToLoad() {
+      return new Promise((resolve) => {
+        let tries = 0;
+        const maxTries = 50;
+        function check() {
+          if (window.ZXing && window.jsQR) {
+            resolve();
+          } else {
+            tries++;
+            if (tries > maxTries) {
+              resolve(); // resolve anyway, fallback enabled
+              return;
+            }
+            setTimeout(check, 100);
+          }
+        }
+        check();
+      });
+    }
+
+    waitForLibrariesToLoad().then(() => {
+      initialize();
+    });
+
+  </script>
+
+  <!-- Accessibility helper style -->
+  <style>
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+  </style>
+
+</body>
+</html>

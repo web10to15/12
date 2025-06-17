@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Universal QR & Barcode Scanner</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin:0; padding:0; }
+    .container { max-width: 420px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow:0 2px 12px #0002;}
+    #scanner { margin: auto; width: 390px; min-height: 280px; }
+    #result { margin-top: 18px; font-size: 1.15em; color: #096; min-height: 36px;}
+    button { margin: 10px 8px 0 0; padding: 9px 20px; font-size: 1em; border:none; border-radius:4px; cursor:pointer;}
+    #start-btn { background: #2196F3; color:#fff; }
+    #stop-btn { background: #f44336; color:#fff; }
+    @media (max-width: 500px) {
+      .container { max-width: 99vw; padding:10px;}
+      #scanner { width: 99vw; min-width:220px; min-height:160px; }
+    }
+  </style>
+  <!-- html5-qrcode CDN -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Universal QR & Barcode Scanner</h2>
+    <div id="scanner"></div>
+    <div id="result"></div>
+    <button id="start-btn">Start Scanning</button>
+    <button id="stop-btn">Stop Scanning</button>
+  </div>
+  <script>
+    let html5QrCode;
+    const scannerId = "scanner";
+    const resultDiv = document.getElementById('result');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+
+    startBtn.onclick = () => {
+      resultDiv.textContent = "Starting camera...";
+      html5QrCode = new Html5Qrcode(scannerId);
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 12, qrbox: 250, formatsToSupport: [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.PDF_417
+          ] },
+        (decodedText, decodedResult) => {
+          resultDiv.innerHTML = `<b>Scanned Code:</b> ${decodedText}<br><b>Format:</b> ${decodedResult.result.format.formatName}`;
+          html5QrCode.stop();
+        },
+        (errorMessage) => {}
+      ).catch(err => {
+        resultDiv.innerHTML = `<span style="color:#f00;">Camera Error:</span> ${err}`;
+      });
+    };
+
+    stopBtn.onclick = () => {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          resultDiv.innerHTML = "Stopped scanning.";
+        });
+      }
+    };
+  </script>
+</body>
+</html>
