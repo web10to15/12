@@ -1,294 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR & Barcode Scanner</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-        
-        header {
-            background: linear-gradient(90deg, #2575fc, #6a11cb);
-            color: white;
-            padding: 25px 30px;
-            text-align: center;
-        }
-        
-        header h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
-        .scanner-section {
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px;
-        }
-        
-        .camera-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        #video {
-            width: 100%;
-            display: block;
-            background: #111;
-        }
-        
-        #canvas {
-            display: none;
-        }
-        
-        .scanner-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 2;
-        }
-        
-        .scan-box {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70%;
-            height: 200px;
-            border: 3px solid #2575fc;
-            border-radius: 8px;
-            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
-        }
-        
-        .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: #2575fc;
-            animation: scan 2s infinite linear;
-            border-radius: 2px;
-        }
-        
-        @keyframes scan {
-            0% { top: 0; }
-            50% { top: calc(100% - 4px); }
-            100% { top: 0; }
-        }
-        
-        .controls {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .btn {
-            padding: 14px 28px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(90deg, #2575fc, #6a11cb);
-            color: white;
-            box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
-        }
-        
-        .btn-secondary {
-            background: #f0f4f8;
-            color: #2575fc;
-            border: 2px solid #2575fc;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(37, 117, 252, 0.5);
-        }
-        
-        .btn:active {
-            transform: translateY(1px);
-        }
-        
-        .result-section {
-            background: #f8f9ff;
-            padding: 30px;
-            border-top: 2px solid #eef2f7;
-        }
-        
-        .result-container {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .result-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            color: #2575fc;
-        }
-        
-        #result {
-            min-height: 100px;
-            padding: 20px;
-            background: #f8f9ff;
-            border-radius: 10px;
-            border: 1px dashed #2575fc;
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .info-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            margin-top: 30px;
-            padding: 20px;
-        }
-        
-        .info-card {
-            flex: 1;
-            min-width: 250px;
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .info-card h3 {
-            margin-bottom: 15px;
-            color: #2575fc;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .info-card ul {
-            padding-left: 20px;
-        }
-        
-        .info-card li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        
-        .info-card li:last-child {
-            margin-bottom: 0;
-        }
-        
-        .type-indicator {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .qr-type {
-            background: rgba(37, 117, 252, 0.2);
-            color: #2575fc;
-        }
-        
-        .barcode-type {
-            background: rgba(106, 17, 203, 0.2);
-            color: #6a11cb;
-        }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: white;
-            background: rgba(0, 0, 0, 0.2);
-            margin-top: 20px;
-            border-radius: 0 0 20px 20px;
-        }
-        
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .scanner-section {
-                padding: 20px;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: center;
-                width: 100%;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-        
-        
-        .button-container {
+  <meta charset="UTF-8">
+  <title>Universal QR & Barcode Scanner</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { 
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #2d3748;
+    }
+    
+    .container {
+      max-width: 450px;
+      margin: 0 auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                  0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    h2 {
+      color: #1a365d;
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 600;
+      font-size: 1.8rem;
+    }
+    
+    #scanner {
+      width: 100%;
+      min-height: 280px;
+      margin: 15px auto;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #edf2f7;
+      border-radius: 8px;
+      border-left: 4px solid #4299e1;
+      font-size: 1.05rem;
+      color: #2b6cb0;
+      min-height: 60px;
+      word-break: break-word;
+    }
+    
+    .button-container {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
@@ -320,7 +89,7 @@
       transform: translateY(0);
     }
     
-    start-btn {
+    #start-btn {
       background: #3182ce;
       color: white;
     }
@@ -376,230 +145,62 @@
         flex: none;
       }
     }
-    
-    
-    </style>
+  </style>
+  <!-- html5-qrcode CDN -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-qrcode"></i> QR & Barcode Scanner</h1>
-            <p>Scan QR codes and barcodes directly in your browser. No app installation required!</p>
-        </header>
-        
-        <section class="scanner-section">
-            <div class="camera-container">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="canvas" class="hidden"></canvas>
-                <div class="scanner-overlay">
-                    <div class="scan-box">
-                        <div class="scan-line"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="controls">
-                <button id="startBtn" class="btn btn-primary">
-                    <i class="fas fa-play"></i> Start Scanner
-                </button>
-                <button id="stopBtn" class="btn btn-secondary" disabled>
-                    <i class="fas fa-stop"></i> Stop Scanner
-                </button>
-                <button id="resetBtn" class="btn btn-secondary">
-                    <i class="fas fa-redo"></i> Reset
-                </button>
-                
-                <button id="create-btn" onclick="window.location.href='12.html'">Create QR Code</button>
+  <div class="container">
+    <h2>Universal QR & Barcode Scanner</h2>
+    <div id="scanner"></div>
+    <div id="result"></div>
+    <div class="button-container">
+      <button id="start-btn">Start Scanning</button>
+      <button id="stop-btn">Stop Scanning</button>
+      <button id="create-btn" onclick="window.location.href='12.html'">Create QR Code</button>
       <button id="image-scan-btn" onclick="window.location.href='image.html'">Scan from Image</button>
-                
-            </div>
-        </section>
-        
-        <section class="result-section">
-            <div class="result-header">
-                <i class="fas fa-search"></i>
-                <h2>Scan Results</h2>
-            </div>
-            <div class="result-container">
-                <div id="result">
-                    Scanner is not active. Click "Start Scanner" to begin.
-                </div>
-            </div>
-        </section>
-        
-        <div class="info-section">
-            <div class="info-card">
-                <h3><i class="fas fa-info-circle"></i> How to Use</h3>
-                <ul>
-                    <li>Click "Start Scanner" to activate your camera</li>
-                    <li>Position the QR/barcode inside the scanning frame</li>
-                    <li>Hold steady until the code is recognized</li>
-                    <li>Use "Reset" to clear results and scan again</li>
-                </ul>
-            </div>
-            
-            <div class="info-card">
-                <h3><i class="fas fa-lightbulb"></i> Supported Formats</h3>
-                <ul>
-                    <li>QR Codes <span class="type-indicator qr-type">QR</span></li>
-                    <li>UPC-A Barcodes <span class="type-indicator barcode-type">1D</span></li>
-                    <li>EAN-13 Barcodes <span class="type-indicator barcode-type">1D</span></li>
-                    <li>Code 128 Barcodes <span class="type-indicator barcode-type">1D</span></li>
-                </ul>
-            </div>
-        </div>
-        
-        <footer>
-            <p>created by: Sabbir</p>
-        </footer>
     </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const resultDiv = document.getElementById('result');
-            const startBtn = document.getElementById('startBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            
-            let scanning = false;
-            let stream = null;
-            const canvasContext = canvas.getContext('2d');
-            
-            // Function to start the camera
-            async function startCamera() {
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { 
-                            facingMode: 'environment',
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 }
-                        } 
-                    });
-                    
-                    video.srcObject = stream;
-                    video.play();
-                    
-                    startBtn.disabled = true;
-                    stopBtn.disabled = false;
-                    scanning = true;
-                    
-                    resultDiv.textContent = "Scanning... Position a QR/barcode in front of your camera.";
-                    scanFrame();
-                } catch (err) {
-                    console.error('Error accessing camera:', err);
-                    resultDiv.innerHTML = `
-                        <strong>Camera Error:</strong> ${err.message || 'Unable to access camera.'}
-                        <br>Please ensure you have granted camera permissions and try again.
-                    `;
-                }
-            }
-            
-            // Function to scan video frames
-            function scanFrame() {
-                if (!scanning) return;
-                
-                if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    
-                    const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
-                    
-                    // Calculate the scanning box dimensions (70% of video width)
-                    const boxSize = Math.min(canvas.width, canvas.height) * 0.7;
-                    const boxX = (canvas.width - boxSize) / 2;
-                    const boxY = (canvas.height - boxSize) / 2;
-                    
-                    // Extract the image data from the scanning box
-                    const boxImageData = canvasContext.getImageData(boxX, boxY, boxSize, boxSize);
-                    
-                    // Try to decode QR code
-                    const qrCode = jsQR(boxImageData.data, boxImageData.width, boxImageData.height);
-                    
-                    if (qrCode) {
-                        scanning = false;
-                        displayResult(qrCode.data, "QR Code");
-                        return;
-                    }
-                    
-                    // For barcode scanning we would integrate a library like QuaggaJS here
-                    // Since this is a demo, we'll simulate barcode detection occasionally
-                    if (Math.random() < 0.01) {
-                        simulateBarcodeDetection();
-                        return;
-                    }
-                }
-                
-                requestAnimationFrame(scanFrame);
-            }
-            
-            // Function to simulate barcode detection
-            function simulateBarcodeDetection() {
-                const barcodes = [
-                    {data: "978020137962", type: "EAN-13"},
-                    {data: "123456789012", type: "UPC-A"},
-                    {data: "ABCD1234EFG567", type: "Code 128"}
-                ];
-                
-                const randomBarcode = barcodes[Math.floor(Math.random() * barcodes.length)];
-                displayResult(randomBarcode.data, randomBarcode.type);
-            }
-            
-            // Function to display scan results
-            function displayResult(data, type) {
-                resultDiv.innerHTML = `
-                    <strong>Scanned ${type}:</strong><br>
-                    <div style="margin-top: 15px; padding: 15px; background: #e6f0ff; border-radius: 8px; word-break: break-all;">
-                        ${data}
-                    </div>
-                    <div style="margin-top: 15px; color: #666; font-size: 0.9rem;">
-                        <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
-                        Successfully scanned at ${new Date().toLocaleTimeString()}
-                    </div>
-                `;
-            }
-            
-            // Function to stop the camera
-            function stopCamera() {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                }
-                
-                scanning = false;
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                
-                if (resultDiv.textContent.includes("Scanning")) {
-                    resultDiv.textContent = "Scanner stopped. Click 'Start Scanner' to begin again.";
-                }
-            }
-            
-            // Function to reset the scanner
-            function resetScanner() {
-                stopCamera();
-                resultDiv.textContent = "Scanner is not active. Click 'Start Scanner' to begin.";
-            }
-            
-            // Event listeners
-            startBtn.addEventListener('click', startCamera);
-            stopBtn.addEventListener('click', stopCamera);
-            resetBtn.addEventListener('click', resetScanner);
-            
-            // Add keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 's' && !startBtn.disabled) {
-                    startCamera();
-                } else if (e.key === 't' && !stopBtn.disabled) {
-                    stopCamera();
-                } else if (e.key === 'r') {
-                    resetScanner();
-                }
-            });
+  </div>
+  <script>
+    let html5QrCode;
+    const scannerId = "scanner";
+    const resultDiv = document.getElementById('result');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+
+    startBtn.onclick = () => {
+      resultDiv.textContent = "Starting camera...";
+      html5QrCode = new Html5Qrcode(scannerId);
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 12, qrbox: 250, formatsToSupport: [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.PDF_417
+          ] },
+        (decodedText, decodedResult) => {
+          resultDiv.innerHTML = `<b>Scanned Code:</b> ${decodedText}<br><b>Format:</b> ${decodedResult.result.format.formatName}`;
+          html5QrCode.stop();
+        },
+        (errorMessage) => {}
+      ).catch(err => {
+        resultDiv.innerHTML = `<span style="color:#e53e3e;">Camera Error:</span> ${err}`;
+      });
+    };
+
+    stopBtn.onclick = () => {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          resultDiv.innerHTML = "Stopped scanning.";
         });
-    </script>
+      }
+    };
+  </script>
 </body>
 </html>
